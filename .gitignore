@@ -1,0 +1,15 @@
+.codex/
+.env.local
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.build/
+data/
+models/
+training_artifacts/
+checkpoints/
+output/

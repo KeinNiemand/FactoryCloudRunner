@@ -1,0 +1,28 @@
+services:
+  runner:
+    image: ${FACTORY_RUNNER_IMAGE:-factory-cloud-runner:local}
+    restart: "no"
+    stop_grace_period: 20m
+    gpus: all
+    environment:
+      RUN_IDS: ${RUN_IDS}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      NEXTCLOUD_USERNAME: ${NEXTCLOUD_USERNAME}
+      NEXTCLOUD_PASSWORD: ${NEXTCLOUD_PASSWORD}
+      NEXTCLOUD_RUN_ROOT: ${NEXTCLOUD_RUN_ROOT}
+      NEXTCLOUD_DATA_ROOT: ${NEXTCLOUD_DATA_ROOT}
+      NEXTCLOUD_MODEL_ROOT: ${NEXTCLOUD_MODEL_ROOT}
+      WANDB_API_KEY: ${WANDB_API_KEY}
+      WANDB_PROJECT: ${WANDB_PROJECT}
+      WANDB_ENTITY: ${WANDB_ENTITY:-}
+      HF_TOKEN: ${HF_TOKEN:-}
+      CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-all}
+    volumes:
+      - huggingface-cache:/cache/huggingface
+      - torch-cache:/cache/torch
+      - compiled-kernel-cache:/cache/compiled
+
+volumes:
+  huggingface-cache:
+  torch-cache:
+  compiled-kernel-cache:
