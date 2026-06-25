@@ -17,6 +17,11 @@ services:
       WANDB_ENTITY: ${WANDB_ENTITY:-}
       HF_TOKEN: ${HF_TOKEN:-}
       CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-all}
+      FORCE_TORCHRUN: ${FORCE_TORCHRUN:-0}
+      USE_RAY: ${USE_RAY:-0}
+      UNSLOTH_CE_LOSS_TARGET_GB: ${UNSLOTH_CE_LOSS_TARGET_GB:-1}
+      PYTORCH_ALLOC_CONF: ${PYTORCH_ALLOC_CONF:-garbage_collection_threshold:0.85}
+      RUNPOD_SHUTDOWN_ACTION: ${RUNPOD_SHUTDOWN_ACTION:-none}
     volumes:
       - huggingface-cache:/cache/huggingface
       - torch-cache:/cache/torch

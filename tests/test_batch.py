@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -83,13 +84,38 @@ class BatchTests(unittest.TestCase):
             )
             with unittest.mock.patch.dict(
                 "os.environ",
-                {"NEXTCLOUD_PASSWORD": "secret", "RUN_IDS": "run0073", "PATH": "path"},
+                {
+                    "NEXTCLOUD_PASSWORD": "secret",
+                    "RUNPOD_API_KEY": "pod-secret",
+                    "RUNPOD_POD_ID": "pod-id",
+                    "RUN_IDS": "run0073",
+                    "PATH": "path",
+                },
                 clear=True,
             ):
                 environment = _training_environment(settings, Path(temporary))
             self.assertNotIn("NEXTCLOUD_PASSWORD", environment)
+            self.assertNotIn("RUNPOD_API_KEY", environment)
+            self.assertNotIn("RUNPOD_POD_ID", environment)
             self.assertNotIn("RUN_IDS", environment)
             self.assertEqual(environment["WANDB_API_KEY"], "key")
+
+    def test_runner_removes_credentials_from_its_process_environment(self):
+        from runner.main import _remove_runtime_credentials
+
+        with unittest.mock.patch.dict(
+            "os.environ",
+            {
+                "NEXTCLOUD_PASSWORD": "nextcloud-secret",
+                "RUNPOD_API_KEY": "runpod-secret",
+                "WANDB_API_KEY": "wandb-secret",
+                "HF_TOKEN": "hf-secret",
+                "PATH": "path",
+            },
+            clear=True,
+        ):
+            _remove_runtime_credentials()
+            self.assertEqual(dict(os.environ), {"PATH": "path"})
 
 
 if __name__ == "__main__":

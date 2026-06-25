@@ -11,6 +11,7 @@ from typing import Callable
 
 from .config import Settings, load_run_config
 from .nextcloud import RcloneClient
+from .runpod import request_shutdown
 from .status import utc_now, write_status
 from .training import ShutdownController, run_training
 
@@ -38,7 +39,12 @@ def _run_logger(run_id: str, log_path: Path) -> tuple[logging.LoggerAdapter, log
 def _training_environment(settings: Settings, checkpoints: Path) -> dict[str, str]:
     environment = os.environ.copy()
     for name in tuple(environment):
-        if name.startswith("NEXTCLOUD_") or name.startswith("RUNNER_") or name == "RUN_IDS":
+        if (
+            name.startswith("NEXTCLOUD_")
+            or name.startswith("RUNNER_")
+            or name.startswith("RUNPOD_")
+            or name == "RUN_IDS"
+        ):
             environment.pop(name)
     environment.update(
         {
@@ -63,6 +69,17 @@ def _training_environment(settings: Settings, checkpoints: Path) -> dict[str, st
         environment["HF_TOKEN"] = settings.hf_token
         environment["HUGGING_FACE_HUB_TOKEN"] = settings.hf_token
     return environment
+
+
+def _remove_runtime_credentials() -> None:
+    for name in tuple(os.environ):
+        if (
+            name.startswith("NEXTCLOUD_")
+            or name.startswith("RUNPOD_")
+            or name == "WANDB_API_KEY"
+            or name in {"HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"}
+        ):
+            os.environ.pop(name)
 
 
 def _write_status_safely(
@@ -227,17 +244,31 @@ def main() -> int:
         return 0
 
     _configure_logging()
+    result = 1
+    runpod_environment = {
+        name: value
+        for name in ("RUNPOD_SHUTDOWN_ACTION", "RUNPOD_POD_ID", "RUNPOD_API_KEY")
+        if (value := os.environ.get(name)) is not None
+    }
     try:
         settings = Settings.from_env()
+        _remove_runtime_credentials()
         shutdown = ShutdownController(settings.shutdown_timeout_seconds)
         for signal_number in (signal.SIGTERM, signal.SIGINT):
             signal.signal(signal_number, lambda received, _frame: shutdown.request(received))
         LOGGER.info("LlamaFactory build: %s", json.dumps(build_info(), sort_keys=True))
         with RcloneClient(settings, shutdown) as client:
-            return run_batch(settings, client, shutdown)
+            result = run_batch(settings, client, shutdown)
     except Exception:
         LOGGER.exception("runner startup failed")
-        return 1
+    finally:
+        _remove_runtime_credentials()
+        try:
+            request_shutdown(runpod_environment, allow_terminate=result == 0, logger=LOGGER)
+        except Exception:
+            LOGGER.exception("RunPod shutdown request failed")
+            result = 1
+    return result
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 FactoryCloudRunner is a sealed, PID-1 Docker runner around a separately supplied LlamaFactory working tree. It downloads cloud-style runs and their inputs from Nextcloud, executes them in order, uploads checkpoints and diagnostics, then exits.
 
-It does not start SSH, Jupyter, LlamaBoard, an idle shell, or any RunPod API integration.
+It does not start SSH, Jupyter, LlamaBoard, or an idle shell. On RunPod it can stop or terminate its own Pod after the final upload.
 
 ## Image build
 
@@ -14,11 +14,23 @@ The local build script records the exact LlamaFactory commit and dirty state:
 
 The image uses a pinned Python 3.12 slim base plus the official CUDA 13 PyTorch wheels. Torch and its CUDA libraries therefore exist only once. The base digest, PyTorch index versions, FA2 wheel URL, and FA2 wheel SHA-256 are pinned. Source compilation is not used.
 
-Dirty LlamaFactory trees are allowed for local images. A production build refuses them:
+Dirty LlamaFactory source trees are allowed for local images. A production build refuses them; untracked `.codex/` tool state is ignored because it is excluded from the build context:
 
 ```powershell
 .\scripts\build-local.ps1 -Production -Tag registry.example/factory-cloud-runner:revision
 ```
+
+Production images are `linux/amd64` only. Push one directly with:
+
+```powershell
+.\scripts\build-local.ps1 `
+  -Production `
+  -Push `
+  -PackageIsPublic `
+  -Tag ghcr.io/keinniemand/factory-cloud-runner:v0.1.0
+```
+
+Bootstrap the tiny GHCR placeholder and make that package public before uploading the full image. Builds and pushes remain local so the existing multi-gigabyte Docker cache is reused. See [docs/runpod.md](docs/runpod.md) for registry and RunPod setup.
 
 Inspect the installed engine metadata without starting a job:
 
@@ -99,15 +111,19 @@ Then run the sealed image with no repository bind mount:
 
 All GPUs are exposed by default. Set `CUDA_VISIBLE_DEVICES=0` in `.env.local` to select one. Hugging Face, Torch, Triton, TorchInductor, and Unsloth caches persist in named Docker volumes.
 
-Exercise the future deletion hook without calling RunPod:
+Single-machine tuning (`FORCE_TORCHRUN`, `USE_RAY`, `UNSLOTH_CE_LOSS_TARGET_GB`, and `PYTORCH_ALLOC_CONF`) lives in `.env.local`/Compose rather than the image. RunPod therefore starts without those local defaults and can select its own multi-GPU settings.
+
+Mock the RunPod stop/delete requests without making a network call:
 
 ```powershell
-.\scripts\run-local.ps1 -MockRunPodDelete
+python -m unittest tests.test_runpod -v
 ```
 
 The runner processes every `RUN_IDS` entry even if an earlier training run fails. It exits zero only when every run and every checkpoint upload succeeds.
 
 On SIGTERM or SIGINT, the runner forwards the signal to the LlamaFactory process group, waits up to 120 seconds, kills it if necessary, uploads partial checkpoints, and exits nonzero.
+
+When `RUNPOD_POD_ID` is present, the runner defaults to calling RunPod's stop endpoint after all uploads. Set `RUNPOD_SHUTDOWN_ACTION=terminate` for disposable Pods or `none` to disable the API call. Termination is used only after complete success; failures are stopped so the Pod disk is preserved. RunPod credentials are removed from inherited child-process environments before LlamaFactory or rclone starts.
 
 ## Tests
 
@@ -117,7 +133,7 @@ Run the local unit checks:
 python -m unittest discover -s tests -v
 ```
 
-Before adding any RunPod API call, perform the real pipeline test with a new cloud-only run number and the actual 7B recipe, changing only:
+The local pipeline was proven before adding the bounded RunPod shutdown call. For each new image, perform a real pipeline test with a new cloud-only run number and the actual 7B recipe, changing only:
 
 ```yaml
 max_steps: 1
@@ -137,7 +153,7 @@ Verify:
 8. In a two-run batch, a deliberately invalid first run does not prevent the second.
 9. Relaunching the one-step run resumes from its downloaded checkpoint.
 
-Actual RunPod calls remain absent until the pipeline passes.
+The RunPod API client is unit-tested locally; the next deployment test should use `RUNPOD_SHUTDOWN_ACTION=stop` before enabling Pod deletion.
 
 ## Current real run0073 setup
 
