@@ -63,18 +63,18 @@ The three remote roots are independent:
 ```text
 NEXTCLOUD_RUN_ROOT=/remote/path/training_artifacts
 NEXTCLOUD_DATA_ROOT=/remote/path/training_data
-NEXTCLOUD_MODEL_ROOT=/AI Models/LLM
+NEXTCLOUD_MODEL_ROOT=/remote/path/models
 ```
 
-For `run0073`, the runner downloads `NEXTCLOUD_RUN_ROOT/run0073`, requires exactly one `cli_config.yml`, and requires:
+For example, `run0123` downloads from `NEXTCLOUD_RUN_ROOT/run0123`, requires exactly one `cli_config.yml`, and uses container-native paths:
 
 ```yaml
 model_name_or_path: some-public-huggingface/model
-dataset_dir: /workspace/data/SkyrimCYOA_SFT/llamafactory
-output_dir: /workspace/training_artifacts/run0073/checkpoints
-logging_dir: /workspace/training_artifacts/run0073/checkpoints/logs
+dataset_dir: /workspace/data/my_dataset/llamafactory
+output_dir: /workspace/training_artifacts/run0123/checkpoints
+logging_dir: /workspace/training_artifacts/run0123/checkpoints/logs
 report_to: wandb
-run_name: run0073_description
+run_name: run0123_description
 ```
 
 A private model uses:
@@ -88,8 +88,8 @@ Dataset and private-model paths are mapped relative to their respective Nextclou
 After every success, failure, or interrupted training process, the runner writes and uploads:
 
 ```text
-run0073/checkpoints/.runner/status.json
-run0073/checkpoints/.runner/runner.log
+run0123/checkpoints/.runner/status.json
+run0123/checkpoints/.runner/runner.log
 ```
 
 All other LlamaFactory checkpoint contents are uploaded unchanged. Existing remote checkpoints are downloaded first, so LlamaFactory's normal last-checkpoint detection resumes the run.
@@ -155,60 +155,35 @@ Verify:
 
 The RunPod API client is unit-tested locally; the next deployment test should use `RUNPOD_SHUTDOWN_ACTION=stop` before enabling Pod deletion.
 
-## Current real run0073 setup
+## Preparing a real local test
 
-The synchronized Windows paths map to these WebDAV roots:
+A synchronized Windows folder may help you prepare files, but configure the runner with paths relative to the Nextcloud WebDAV account:
 
 ```text
-N:\AI Models\TwineLLMFinetune\runs
-  -> NEXTCLOUD_RUN_ROOT=/AI Models/TwineLLMFinetune/runs
+X:\Nextcloud\training\runs
+  -> NEXTCLOUD_RUN_ROOT=/training/runs
 
-N:\AI Models\TwineLLMFinetune\training_data
-  -> NEXTCLOUD_DATA_ROOT=/AI Models/TwineLLMFinetune/training_data
+X:\Nextcloud\training\data
+  -> NEXTCLOUD_DATA_ROOT=/training/data
 ```
 
-`run0073/cli_config.yml` is configured with:
+The drive letter and local synchronization root are not part of the WebDAV path. Put the run YAML under the synchronized `runs\run0123` directory and its referenced dataset under `data`.
+
+For a smoke run, keep the real model and training recipe but temporarily add:
 
 ```yaml
-model_name_or_path: Mawdistical/Kuwutu-7B
-dataset_dir: /workspace/data/SkyrimCYOA_SFT/llamafactory
-output_dir: /workspace/training_artifacts/run0073/checkpoints
-logging_dir: /workspace/training_artifacts/run0073/checkpoints/logs
 max_steps: 1
 save_strategy: steps
 save_steps: 1
 ```
 
-Therefore the dataset must exist remotely, and in the synchronized Windows view, at:
-
-```text
-N:\AI Models\TwineLLMFinetune\training_data\SkyrimCYOA_SFT\llamafactory
-```
-
-The local `training_data` directory was empty when this configuration was prepared. Populate that directory before launching the real test.
-
-An ignored `.env.local` is prepared with the run ID, roots, W&B project, GPU selection, and existing W&B/Hugging Face tokens. Open it once and replace only:
-
-```text
-NEXTCLOUD_URL=https://your-host/remote.php/dav/files/KeinNiemand
-NEXTCLOUD_PASSWORD=your-nextcloud-app-password
-```
-
-Use the HTTPS WebDAV endpoint, not the Windows SMB path shown by `N:`. Then launch the sealed image:
+Copy `.env.example` to the ignored `.env.local`, fill in the WebDAV endpoint and runtime credentials, then launch:
 
 ```powershell
 .\scripts\run-local.ps1
 ```
 
-No repository directory is mounted into the container. Model, dataset, checkpoint, Triton, and Hugging Face downloads can make the first launch slow; later launches reuse named cache volumes.
-
-Verify completion at:
-
-```text
-N:\AI Models\TwineLLMFinetune\runs\run0073\checkpoints\.runner\status.json
-```
-
-Rerunning the same command downloads the uploaded checkpoints and resumes automatically. After the one-step test passes, remove `max_steps: 1` from `run0073/cli_config.yml` and restore the desired checkpoint interval, such as `save_steps: 30`, to run the complete two-epoch configuration.
+No repository directory is mounted into the container. First-run model and kernel downloads may be slow; later runs reuse named cache volumes. Completion is recorded remotely under `run0123/checkpoints/.runner/status.json`. Relaunching the same run downloads its checkpoints and relies on LlamaFactory's normal resume behavior.
 
 The reproducible small-model sealed-container test is:
 

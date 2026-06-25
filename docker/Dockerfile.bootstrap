@@ -3,4 +3,5 @@ FROM scratch
 
 LABEL org.opencontainers.image.title="FactoryCloudRunner registry bootstrap" \
       org.opencontainers.image.description="Tiny placeholder used to make the GHCR package public before uploading the full CUDA image" \
-      org.opencontainers.image.source="https://github.com/KeinNiemand/FactoryCloudRunner"
+      org.opencontainers.image.source="https://github.com/KeinNiemand/FactoryCloudRunner" \
+      org.opencontainers.image.licenses="MIT"

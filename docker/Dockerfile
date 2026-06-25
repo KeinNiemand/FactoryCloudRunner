@@ -116,6 +116,7 @@ RUN mkdir -p \
 LABEL org.opencontainers.image.title="FactoryCloudRunner" \
       org.opencontainers.image.description="Sealed LlamaFactory Nextcloud batch runner" \
       org.opencontainers.image.source="https://github.com/KeinNiemand/FactoryCloudRunner" \
+      org.opencontainers.image.licenses="MIT" \
       io.factorycloudrunner.llamafactory.commit="${LLAMAFACTORY_COMMIT}" \
       io.factorycloudrunner.llamafactory.dirty="${LLAMAFACTORY_DIRTY}"
 

@@ -63,17 +63,17 @@ The runner is the image entrypoint and must remain PID 1. Do not replace the com
 Add these environment variables:
 
 ```text
-RUN_IDS=run0073
+RUN_IDS=run0123
 
-NEXTCLOUD_URL=https://your-host/remote.php/dav/files/KeinNiemand
+NEXTCLOUD_URL=https://your-host/remote.php/dav/files/username
 NEXTCLOUD_USERNAME={{ RUNPOD_SECRET_nextcloud_username }}
 NEXTCLOUD_PASSWORD={{ RUNPOD_SECRET_nextcloud_password }}
-NEXTCLOUD_RUN_ROOT=/AI Models/TwineLLMFinetune/runs
-NEXTCLOUD_DATA_ROOT=/AI Models/TwineLLMFinetune/training_data
-NEXTCLOUD_MODEL_ROOT=/AI Models/LLM
+NEXTCLOUD_RUN_ROOT=/training/runs
+NEXTCLOUD_DATA_ROOT=/training/data
+NEXTCLOUD_MODEL_ROOT=/models
 
 WANDB_API_KEY={{ RUNPOD_SECRET_wandb_api_key }}
-WANDB_PROJECT=TwineLLMFinetune
+WANDB_PROJECT=my-training-project
 WANDB_ENTITY=
 HF_TOKEN={{ RUNPOD_SECRET_hf_token }}
 
@@ -103,7 +103,7 @@ Deploy a GPU Pod from the template. No SSH or web port is needed. The container:
 Verify the final state at:
 
 ```text
-N:\AI Models\TwineLLMFinetune\runs\run0073\checkpoints\.runner\status.json
+NEXTCLOUD_RUN_ROOT/run0123/checkpoints/.runner/status.json
 ```
 
 Use a new cloud-only run ID for a full training run. Remove the smoke-test `max_steps: 1` and restore the intended save interval before starting it.
