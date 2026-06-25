@@ -32,7 +32,7 @@ RUN python -m pip install --no-cache-dir \
         "torchdata==0.11.0" \
         "liger-kernel==0.8.0" \
         "bitsandbytes==0.49.2" \
-        "deepspeed==0.18.4" \
+        "deepspeed==0.19.2" \
         "wandb==0.27.0" \
         "diffusers==0.38.0" \
         "sentencepiece==0.2.1" \
@@ -96,7 +96,7 @@ RUN printf '%s\n' "${LLAMAFACTORY_COMMIT}" > /opt/llamafactory/FACTORY_SOURCE_CO
     && python -m pip install --no-cache-dir --no-deps "/opt/llamafactory"
 
 RUN nvcc -V \
-    && python -c "import importlib.metadata as m, torch, transformers, flash_attn, flash_attn_2_cuda, deepspeed, llamafactory; assert torch.__version__ == '2.9.0+cu130'; assert torch.version.cuda == '13.0'; assert torch._C._GLIBCXX_USE_CXX11_ABI; assert transformers.__version__ == '5.5.0'; assert m.version('unsloth') == '2026.5.2'; assert m.version('torchao') == '0.14.1'; assert m.version('msgspec') == '0.21.1'; assert m.version('flash-attn') == '2.8.3'; assert m.version('deepspeed') == '0.18.4'" \
+    && python -c "import importlib.metadata as m, torch, transformers, flash_attn, flash_attn_2_cuda, deepspeed, llamafactory; assert torch.__version__ == '2.9.0+cu130'; assert torch.version.cuda == '13.0'; assert torch._C._GLIBCXX_USE_CXX11_ABI; assert transformers.__version__ == '5.5.0'; assert m.version('unsloth') == '2026.5.2'; assert m.version('torchao') == '0.14.1'; assert m.version('msgspec') == '0.21.1'; assert m.version('flash-attn') == '2.8.3'; assert m.version('deepspeed') == '0.19.2'" \
     && python -m xformers.info
 
 WORKDIR /opt/factory-cloud-runner
