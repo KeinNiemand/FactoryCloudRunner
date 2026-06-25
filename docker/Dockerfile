@@ -32,7 +32,7 @@ RUN python -m pip install --no-cache-dir \
         "torchdata==0.11.0" \
         "liger-kernel==0.8.0" \
         "bitsandbytes==0.49.2" \
-        "deepspeed==0.19.2" \
+        "deepspeed==0.19.1" \
         "wandb==0.27.0" \
         "diffusers==0.38.0" \
         "sentencepiece==0.2.1" \
