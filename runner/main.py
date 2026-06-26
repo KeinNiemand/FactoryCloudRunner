@@ -51,7 +51,6 @@ def _training_environment(settings: Settings, checkpoints: Path) -> dict[str, st
             "WANDB_API_KEY": settings.wandb_api_key,
             "WANDB_PROJECT": settings.wandb_project,
             "WANDB_DIR": "/cache/wandb",
-            "LLAMAFACTORY_SEPARATE_EVAL": "0",
             "HF_HOME": "/cache/huggingface",
             "HF_HUB_CACHE": "/cache/huggingface/hub",
             "HF_DATASETS_CACHE": "/cache/huggingface/datasets",
@@ -61,6 +60,7 @@ def _training_environment(settings: Settings, checkpoints: Path) -> dict[str, st
             "UNSLOTH_COMPILE_CACHE": "/cache/compiled/unsloth",
         }
     )
+    environment.setdefault("LLAMAFACTORY_SEPARATE_EVAL", "0")
     if settings.wandb_entity:
         environment["WANDB_ENTITY"] = settings.wandb_entity
     else:

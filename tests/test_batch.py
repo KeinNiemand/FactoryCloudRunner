@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 from runner.config import Settings
@@ -99,6 +100,29 @@ class BatchTests(unittest.TestCase):
             self.assertNotIn("RUNPOD_POD_ID", environment)
             self.assertNotIn("RUN_IDS", environment)
             self.assertEqual(environment["WANDB_API_KEY"], "key")
+
+    def test_training_environment_preserves_separate_eval_override(self):
+        from runner.main import _training_environment
+
+        with tempfile.TemporaryDirectory() as temporary:
+            settings = Settings(
+                run_ids=("run0073",),
+                nextcloud_url="https://example.invalid",
+                nextcloud_username="user",
+                nextcloud_password="password",
+                nextcloud_run_root="/runs",
+                nextcloud_data_root="/data",
+                nextcloud_model_root="/models",
+                wandb_api_key="key",
+                wandb_project="project",
+                wandb_entity=None,
+                hf_token=None,
+                workspace_root=Path(temporary),
+            )
+            with unittest.mock.patch.dict("os.environ", {"LLAMAFACTORY_SEPARATE_EVAL": "1"}, clear=True):
+                environment = _training_environment(settings, Path(temporary))
+
+        self.assertEqual(environment["LLAMAFACTORY_SEPARATE_EVAL"], "1")
 
     def test_runner_removes_credentials_from_its_process_environment(self):
         from runner.main import _remove_runtime_credentials
