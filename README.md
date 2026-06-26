@@ -38,7 +38,7 @@ Inspect the installed engine metadata without starting a job:
 docker run --rm factory-cloud-runner:local --build-info
 ```
 
-The image is pinned to PyTorch 2.9.0/CUDA 13.0, Transformers 5.5.0, Unsloth 2026.5.2, FlashAttention 2.8.3, Liger 0.8.0, bitsandbytes 0.49.2, DeepSpeed 0.19.2, W&B 0.27.0, and rclone 1.74.3. The build imports both `flash_attn` and its CUDA extension and fails if FA2 is unavailable.
+The image is pinned to PyTorch 2.9.0/CUDA 13.0, Transformers 5.5.0, Unsloth 2026.5.2, FlashAttention 2.8.3, Liger 0.8.0, bitsandbytes 0.49.2, DeepSpeed 0.19.1, W&B 0.27.0, and rclone 1.74.3. The build imports both `flash_attn` and its CUDA extension and fails if FA2 is unavailable.
 
 Docker Engine defaults to a small number of concurrent layer downloads. For faster future pulls, merge this into Docker Desktop **Settings → Docker Engine** and restart Docker Desktop:
 
