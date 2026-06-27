@@ -123,7 +123,7 @@ The runner processes every `RUN_IDS` entry even if an earlier training run fails
 
 On SIGTERM or SIGINT, the runner forwards the signal to the LlamaFactory process group, waits up to 120 seconds, kills it if necessary, uploads partial checkpoints, and exits nonzero.
 
-When `RUNPOD_POD_ID` is present, the runner defaults to calling RunPod's stop endpoint after all uploads. Set `RUNPOD_SHUTDOWN_ACTION=terminate` for disposable Pods or `none` to disable the API call. Termination is used only after complete success; failures are stopped so the Pod disk is preserved. RunPod credentials are removed from inherited child-process environments before LlamaFactory or rclone starts.
+When `RUNPOD_POD_ID` is present, the runner defaults to calling RunPod's GraphQL stop mutation after all uploads. Set `RUNPOD_SHUTDOWN_ACTION=terminate` for disposable Pods or `none` to disable the API call. Termination is used only after complete success; failures are stopped so the Pod disk is preserved. RunPod credentials are removed from inherited child-process environments before LlamaFactory or rclone starts.
 
 ## Tests
 

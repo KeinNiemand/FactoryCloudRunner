@@ -80,7 +80,7 @@ HF_TOKEN={{ RUNPOD_SECRET_hf_token }}
 RUNPOD_SHUTDOWN_ACTION=stop
 ```
 
-RunPod injects `RUNPOD_POD_ID` and a Pod-scoped `RUNPOD_API_KEY`; do not add either manually. The runner removes all `RUNPOD_*` values before starting LlamaFactory.
+RunPod injects `RUNPOD_POD_ID` and a Pod-scoped `RUNPOD_API_KEY`; do not add either manually. The runner uses those values for the GraphQL `podStop`/`podTerminate` shutdown mutation, then removes all `RUNPOD_*` values before starting LlamaFactory.
 
 Use `stop` while validating the deployment. It preserves the stopped Pod and its container disk. Once the workflow is proven disposable, use:
 
@@ -97,7 +97,7 @@ Deploy a GPU Pod from the template. No SSH or web port is needed. The container:
 1. downloads the run, dataset, and optional private model;
 2. trains all IDs in `RUN_IDS`;
 3. uploads checkpoints and `.runner` diagnostics;
-4. asks RunPod to stop or terminate the Pod;
+4. asks RunPod through GraphQL to stop or terminate the Pod;
 5. exits.
 
 Verify the final state at:

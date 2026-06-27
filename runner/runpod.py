@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
+import json
 import os
 import time
 from collections.abc import Callable, Mapping
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
@@ -45,15 +46,15 @@ def request_shutdown(
     if not api_key:
         raise ValueError(f"RUNPOD_API_KEY is required for RunPod {action}")
 
-    suffix = "/stop" if action == "stop" else ""
-    url = f"https://rest.runpod.io/v1/pods/{quote(pod_id, safe='')}{suffix}"
-    method = "POST" if action == "stop" else "DELETE"
+    field = "podStop" if action == "stop" else "podTerminate"
+    output = " { id desiredStatus }" if action == "stop" else ""
+    query = f"mutation($input: Pod{action.title()}Input!) {{ {field}(input: $input){output} }}"
     request = Request(
-        url,
-        data=b"" if method == "POST" else None,
-        method=method,
+        f"https://api.runpod.io/graphql?{urlencode({'api_key': api_key})}",
+        data=json.dumps({"query": query, "variables": {"input": {"podId": pod_id}}}).encode("utf-8"),
+        method="POST",
         headers={
-            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
             "User-Agent": "FactoryCloudRunner/0.1",
         },
     )
@@ -64,6 +65,10 @@ def request_shutdown(
             with opener(request, timeout=20) as response:
                 status = getattr(response, "status", 200)
                 if 200 <= status < 300:
+                    body = response.read()
+                    payload = json.loads(body.decode("utf-8")) if body else {}
+                    if payload.get("errors"):
+                        raise RuntimeError(f"RunPod GraphQL returned errors: {payload['errors']}")
                     if logger:
                         logger.info("RunPod %s requested for pod %s", action, pod_id)
                     return True
@@ -73,6 +78,8 @@ def request_shutdown(
                 if logger:
                     logger.info("RunPod pod is already absent or stopped")
                 return True
+            if exception.code in {401, 403}:
+                raise RuntimeError(f"RunPod {action} authorization failed: HTTP {exception.code}") from exception
             last_error = exception
             if attempt < 3:
                 if logger:

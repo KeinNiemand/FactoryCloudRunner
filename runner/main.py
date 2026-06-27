@@ -267,7 +267,7 @@ def main() -> int:
             request_shutdown(runpod_environment, allow_terminate=result == 0, logger=LOGGER)
         except Exception:
             LOGGER.exception("RunPod shutdown request failed")
-            result = 1
+            result = 0 if runpod_environment.get("RUNPOD_POD_ID") else 1
     return result
 
 
